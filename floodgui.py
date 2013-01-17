@@ -101,8 +101,8 @@ def paint_cost():
     Lterrain["state"]=DISABLED
 
 # paints the map in flooding mode
-def paint_floo(mode=2):
-    global root,land,edit_mode,status_txt
+def paint_floo():
+    global root,land,edit_mode,status_txt,fl_mode
     
     a=canvas.find_all()
     for each in a:
@@ -110,10 +110,11 @@ def paint_floo(mode=2):
         
     if(len(land.landcosts)==0): # landcosts are empty, count them now
         status_txt.set("counting landcosts")
-        land.count_landcosts()    
+        land.count_landcosts()
+        
     
-    if(len(land.flooding)==0): # landcosts are empty, count them now
-        land.count_flooding_init(TRUE,mode)
+    if((len(land.flooding)==0) | (fl_mode.get()!=land.opt_flood_mode)): # landcosts are empty, count them now
+        land.count_flooding_init(TRUE,fl_mode.get())
         st=0
         stack_len=1
         while(stack_len>0):
@@ -293,6 +294,8 @@ root.columnconfigure(1, weight=1)
 root.rowconfigure(2, weight=1)
 
 status_txt = StringVar()
+fl_mode = IntVar()
+fl_mode.set(fl.SL_ROOT2)
 
 # main menu
 
@@ -326,11 +329,18 @@ drawframe.grid(column=0, row=2, sticky=(N,E,S,W))
 controlframe = Frame(root)
 controlframe.grid(column=1,row=2, sticky=(N, W, S))
 bterr = Button(controlframe,text="Terrain",command=paint_terr)
-bterr.grid(sticky=(N,W,E))
+bterr.grid(column=0,row=0,sticky=(N,W,E))
 bcost = Button(controlframe,text="Landcosts",command=paint_cost)
-bcost.grid(sticky=(N,W,E))
-bfloo_heu = Button(controlframe,text="Flooding",command=paint_floo)
-bfloo_heu.grid(sticky=(N,W,E))
+bcost.grid(column=0,row=1,sticky=(N,W,E))
+bfloo = Button(controlframe,text="Flooding",command=paint_floo)
+bfloo.grid(column=0,row=5,sticky=(N,W,E))
+rbnormal = Radiobutton(controlframe, text="Normal", value=fl.SL_NORMAL, variable = fl_mode)
+rbnormal.grid(column=0,row=2)
+rbcarthesian = Radiobutton(controlframe, text="Carthesian", value=fl.SL_ROOT2, variable = fl_mode)
+rbcarthesian.grid(column=0,row=3)
+rbnormal = Radiobutton(controlframe, text="New York", value=fl.SL_NEWYORK, variable = fl_mode)
+rbnormal.grid(column=0,row=4)
+
 
 terrain_list = StringVar()
 terrain_list.set("Terrain_0 Terrain_1 Wall_20")

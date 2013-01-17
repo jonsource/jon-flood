@@ -13,6 +13,7 @@ class Landmap:
         self.max_terrain = 20
         self.max_landcosts = 0
         self.max_flooding = 0
+        self.opt_flood_mode = None
 
     def new_terrain(self,w,h,b=0):
         self.terrain = [w*[b] for i in range(h) ]
@@ -40,16 +41,16 @@ class Landmap:
         self.max_landcosts = self._max_map(self.landcosts)
         return self.landcosts
 
-    def count_flooding_init(self,heuristic=False,slant=SL_NORMAL):
+    def count_flooding_init(self,heuristic=False,fl_mode=SL_ROOT2):
         self.opt_heuristic = heuristic
-        self.opt_slant = slant
+        self.opt_flood_mode = fl_mode
         self.flooding = [len(self.landcosts[0])*[[-1,0,0]] for i in range(len(self.landcosts)) ]
         self.stack=[]
         self.stack.append([0,0,0,0,0])
         self.start_time=time.clock()
 
-    def count_flooding(self,heuristic=False):
-        self.count_flooding_init(heuristic)
+    def count_flooding(self,heuristic=False,fl_mode=SL_ROOT2):
+        self.count_flooding_init(heuristic,fl_mode)
         o=1
         while (self.count_flooding_step()>0):
             pass
@@ -87,9 +88,9 @@ class Landmap:
                     if((jin<0) | (jin>=len(self.landcosts[0])) | ((jof==0) & (iof==0))):
                         continue
                     if((jof!=0) & (iof!=0)):
-                        if(self.opt_slant == SL_NEWYORK):
+                        if(self.opt_flood_mode == SL_NEWYORK):
                             continue
-                        if(self.opt_slant == SL_ROOT2):
+                        if(self.opt_flood_mode == SL_ROOT2):
                             cost_add=ca
                     if((self.opt_heuristic==True) & (self.flooding[iin][jin][0]!=-1) & (self.flooding[iin][jin][0]<=(self.landcosts[iin][jin]+cost+cost_add))):
                         continue
