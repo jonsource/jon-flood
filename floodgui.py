@@ -84,6 +84,7 @@ def paint_terr():
     edit_mode = TERRAIN
     status_txt.set("Terrain")
     Lterrain["state"]=NORMAL
+    paint_path()
 
 # paints the map in landcosts mode
 def paint_cost():
@@ -99,6 +100,7 @@ def paint_cost():
     edit_mode=LANDCOSTS
     status_txt.set("Land costs")
     Lterrain["state"]=DISABLED
+    paint_path()
 
 # paints the map in flooding mode
 def paint_floo():
@@ -124,11 +126,13 @@ def paint_floo():
                 st=0
                 status_txt.set(repr(stack_len))
                 root.update()
+        land._count_flooding_finalize()
     print("flooding counted")                
     paintmap(land.flooding,land.max_flooding)
     edit_mode=FLOODING
     status_txt.set("Flooding")
     Lterrain["state"]=DISABLED
+    paint_path()
 
 # convert map indices to canvas coordinates
 def _apply_dim(coords,dim):
@@ -137,26 +141,37 @@ def _apply_dim(coords,dim):
         coord[0]=coord[1]*dim+dim/2
         coord[1]=h
 
+def paint_path(event=None):
+    global canvas,land,status_txt
+    print("show path",show_path.get())
+    if(show_path.get()==1):
+        show=True
+    else:
+        show=False
+    if(event!=None):
+        #different behaviour when called as an event because the call is executed
+        #when goin from old_value to new_value and show_path is updated after the call
+        show=not show
+        print(event.widget)
+    
+    if(show):
+        for i in range(len(land.flooding)):
+            for j in range(len(land.flooding[0])):
+                coords=[[i,j],[land.flooding[i][j][1],land.flooding[i][j][2]] ]
+                _apply_dim(coords,dim)
+                canvas.create_line(coords[:],fill="red",tags="path")
+    else:
+        paths=canvas.find_withtag("path")
+        for each in paths:
+            canvas.delete(each)
+        
+    
 # handle mouse input
 def xy(event):
     global canvas,land,status_txt
     i=int(canvas.canvasy(event.y)/dim)
     j=int(canvas.canvasx(event.x)/dim)
     print(land.terrain[i][j])
-
-    if(edit_mode==FLOODING): # paint path to selected tile
-        start=[i,j]
-        coords=[]
-        end=[land.flooding[i][j][1],land.flooding[i][j][2]]
-        while((start!=end)): # prepare path coordinates
-            coords.append(start)
-            start=list(end)
-            ii,jj=start[0],start[1]
-            end=[land.flooding[ii][jj][1],land.flooding[ii][jj][2]]
-        coords.append(end)
-        _apply_dim(coords,dim)
-        canvas.create_line(coords[:],fill="red")
-        return
 
     if(edit_mode==TERRAIN): # edit selected tile
         if(land.terrain[i][j]!=land.base_terrain):
@@ -167,9 +182,9 @@ def xy(event):
             if(lv>1):
                 lv=lv*10
             land.terrain[i][j]=lv
-        paint_terr()
         land.reset_landcosts()
         land.reset_flooding()
+        paint_terr()
 
 def xy_right(event):
     global canvas,land,status_txt
@@ -295,6 +310,7 @@ root.rowconfigure(2, weight=1)
 
 status_txt = StringVar()
 fl_mode = IntVar()
+show_path = IntVar()
 fl_mode.set(fl.SL_ROOT2)
 
 # main menu
@@ -338,9 +354,11 @@ rbnormal = Radiobutton(controlframe, text="Normal", value=fl.SL_NORMAL, variable
 rbnormal.grid(column=0,row=2)
 rbcarthesian = Radiobutton(controlframe, text="Carthesian", value=fl.SL_ROOT2, variable = fl_mode)
 rbcarthesian.grid(column=0,row=3)
-rbnormal = Radiobutton(controlframe, text="New York", value=fl.SL_NEWYORK, variable = fl_mode)
-rbnormal.grid(column=0,row=4)
-
+rbnewyork = Radiobutton(controlframe, text="New York", value=fl.SL_NEWYORK, variable = fl_mode)
+rbnewyork.grid(column=0,row=4)
+chbpath = Checkbutton(controlframe,text="Show paths",onvalue=1,offvalue=0,variable=show_path)
+chbpath.grid(column=0,row=6)
+chbpath.bind("<Button-1>", paint_path)
 
 terrain_list = StringVar()
 terrain_list.set("Terrain_0 Terrain_1 Wall_20")
